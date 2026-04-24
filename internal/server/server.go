@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
-	"strconv"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 
 	"kira-url/internal/database"
+	"kira-url/internal/env"
 )
+
+var autoMigrate = env.GetEnvBool("AUTO_MIGRATE", true)
 
 type Server struct {
 	port   int
@@ -20,11 +21,11 @@ type Server struct {
 }
 
 func NewServer(logger *slog.Logger) *http.Server {
-	port, _ := strconv.Atoi(os.Getenv("PORT"))
+	port := env.GetEnvInt("PORT", 8080)
 	NewServer := &Server{
 		port:   port,
 		logger: logger,
-		db:     database.New(),
+		db:     database.New(autoMigrate),
 	}
 
 	// Declare Server config

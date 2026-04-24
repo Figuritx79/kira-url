@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"time"
+
+	"kira-url/internal/database/models"
+	"kira-url/internal/env"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
@@ -32,36 +34,42 @@ type service struct {
 }
 
 var (
-	database   = os.Getenv("DB_DATABASE")
-	password   = os.Getenv("DB_PASSWORD")
-	username   = os.Getenv("DB_USERNAME")
-	port       = os.Getenv("DB_PORT")
-	host       = os.Getenv("DB_HOST")
-	schema     = os.Getenv("DB_SCHEMA")
+	database   = env.GetEnvString("DB_DATABASE", "example")
+	password   = env.GetEnvString("DB_PASSWORD", "your_password")
+	username   = env.GetEnvString("DB_USERNAME", "your_username")
+	port       = env.GetEnvString("DB_PORT", "3536")
+	host       = env.GetEnvString("DB_HOST", "localhost")
+	schema     = env.GetEnvString("DB_SCHEMA", "public ")
 	dbInstance *service
 )
 
-func New() Service {
+func New(autoMigrate bool) Service {
 	// Reuse Connection
 	if dbInstance != nil {
 		return dbInstance
 	}
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s", username, password, host, port, database, schema)
 	db, err := sql.Open("pgx", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(25)
 	db.SetConnMaxIdleTime(5 * time.Minute)
 	db.SetConnMaxLifetime(2 * time.Hour)
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	dbGorm, err := gorm.Open(postgres.New(postgres.Config{
 		Conn: db,
 	}), &gorm.Config{})
-
+	if err != nil {
+		log.Fatalf("db down: %v", err) // Log the error and terminate the program
+	}
+	if autoMigrate {
+		dbGorm.AutoMigrate(
+			&models.URL{},
+		)
+	}
 	dbInstance = &service{
 		db: dbGorm,
 	}
