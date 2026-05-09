@@ -1,6 +1,7 @@
 package base62
 
 import (
+	"crypto/rand"
 	"math/big"
 )
 
@@ -18,6 +19,15 @@ const (
 	// Base62 represents the next symbols: [a-z],[A-Z],[0-9]
 	base62Chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 )
+
+func RandamBase62Number() []byte {
+	random, err := rand.Int(rand.Reader, big.NewInt(possibilities))
+	if err != nil {
+		return nil
+	}
+
+	return random.Bytes()
+}
 
 func EncodeToBase62(data []byte) string {
 	if len(data) == 0 {
