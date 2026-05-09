@@ -8,24 +8,34 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 
+	"kira-url/internal/cache"
 	"kira-url/internal/database"
 	"kira-url/internal/env"
+	"kira-url/internal/modules/url"
 )
 
 var autoMigrate = env.GetEnvBool("AUTO_MIGRATE", true)
 
 type Server struct {
-	port   int
-	logger *slog.Logger
-	db     database.Service
+	port      int
+	logger    *slog.Logger
+	db        database.Service
+	urlModule *url.URLModule
+	cache     *cache.Cache
 }
 
 func NewServer(logger *slog.Logger) *http.Server {
+	db := database.New(autoMigrate)
+	cache := cache.NewCache(100 * 1024 * 1024)
+	urlRepository := url.NewURLGormRepository(db.GetDB())
+	urlModule := url.NewURLModule(urlRepository, cache, logger)
 	port := env.GetEnvInt("PORT", 8080)
 	NewServer := &Server{
-		port:   port,
-		logger: logger,
-		db:     database.New(autoMigrate),
+		port:      port,
+		logger:    logger,
+		db:        db,
+		urlModule: urlModule,
+		cache:     cache,
 	}
 
 	// Declare Server config

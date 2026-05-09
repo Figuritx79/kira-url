@@ -16,7 +16,10 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
+
+const DEFAULT_TIMEOUT = 3 * time.Second
 
 // Service represents a service that interacts with a database.
 type Service interface {
@@ -27,10 +30,15 @@ type Service interface {
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
+
+	// DB returns the underlying GORM database connection.
+	// Generics were considered but not necessary here since we're only using PostgreSQL with GORM.
+	// In this case we need to keep simple.
+	GetDB() *gorm.DB
 }
 
 type service struct {
-	db *gorm.DB
+	DB *gorm.DB
 }
 
 var (
@@ -61,7 +69,9 @@ func New(autoMigrate bool) Service {
 
 	dbGorm, err := gorm.Open(postgres.New(postgres.Config{
 		Conn: db,
-	}), &gorm.Config{})
+	}), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
 		log.Fatalf("db down: %v", err) // Log the error and terminate the program
 	}
@@ -71,7 +81,7 @@ func New(autoMigrate bool) Service {
 		)
 	}
 	dbInstance = &service{
-		db: dbGorm,
+		DB: dbGorm,
 	}
 	return dbInstance
 }
@@ -84,7 +94,7 @@ func (s *service) Health() map[string]string {
 
 	stats := make(map[string]string)
 
-	db, err := s.db.DB()
+	db, err := s.DB.DB()
 	if err != nil {
 		stats["status"] = "down"
 		stats["error"] = fmt.Sprintf("db down: %v", err)
@@ -140,10 +150,14 @@ func (s *service) Health() map[string]string {
 // If the connection is successfully closed, it returns nil.
 // If an error occurs while closing the connection, it returns the error.
 func (s *service) Close() error {
-	db, err := s.db.DB()
+	db, err := s.DB.DB()
 	if err != nil {
 		return err
 	}
 	log.Printf("Disconnected from database: %s", database)
 	return db.Close()
+}
+
+func (s *service) GetDB() *gorm.DB {
+	return s.DB
 }

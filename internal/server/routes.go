@@ -30,6 +30,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	r.Get("/health", s.healthHandler)
 
+	r.Mount("/api", s.urlModule.RegisterRoutes())
+
 	return r
 }
 

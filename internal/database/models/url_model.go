@@ -3,6 +3,8 @@ package models
 import (
 	"time"
 
+	"kira-url/internal/funcs"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -19,7 +21,7 @@ type URL struct {
 
 func (url *URL) BeforeCreate(tx *gorm.DB) error {
 	if url.ID == uuid.Nil {
-		newUUID, err := uuid.NewV7()
+		newUUID, err := funcs.GenerateUUID()
 		if err != nil {
 			return err
 		}
