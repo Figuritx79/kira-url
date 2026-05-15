@@ -28,7 +28,7 @@ func (repository *urlGormRepository) FindByShortURL(code string) (*URLResponse, 
 
 	err := repository.db.WithContext(ctx).
 		Model(&models.URL{}).
-		Select("urls.original_url").
+		Select("urls.original_url, urls.visit_count as visit_count, urls.id as id").
 		Where("urls.short_url= ?", code).
 		First(&url).
 		Error
@@ -80,4 +80,22 @@ func (repository *urlGormRepository) FindByURL(url string) (*ShortURLResponse, e
 		return nil, err
 	}
 	return shortURL, nil
+}
+
+func (repository *urlGormRepository) Update(updateURL models.URL, code string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
+	defer cancel()
+
+	err := repository.db.
+		WithContext(ctx).
+		Transaction(func(tx *gorm.DB) error {
+			if err := tx.Model(&models.URL{}).Where("short_url= ?", code).Updates(updateURL).Error; err != nil {
+				return err
+			}
+			return nil
+		})
+	if err != nil {
+		return err
+	}
+	return nil
 }

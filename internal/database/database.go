@@ -56,7 +56,7 @@ func New(autoMigrate bool) Service {
 	if dbInstance != nil {
 		return dbInstance
 	}
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s", username, password, host, port, database, schema)
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require&search_path=%s&channel_binding=require", username, password, host, port, database, schema)
 	db, err := sql.Open("pgx", connStr)
 	if err != nil {
 		log.Fatal(err)
@@ -70,7 +70,7 @@ func New(autoMigrate bool) Service {
 	dbGorm, err := gorm.Open(postgres.New(postgres.Config{
 		Conn: db,
 	}), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
 		log.Fatalf("db down: %v", err) // Log the error and terminate the program

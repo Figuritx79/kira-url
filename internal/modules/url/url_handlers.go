@@ -8,6 +8,7 @@ import (
 	"kira-url/internal/cache"
 	"kira-url/internal/constants"
 	"kira-url/internal/httperrors"
+	"kira-url/internal/modules/click"
 	"kira-url/internal/request"
 	"kira-url/internal/response"
 	"kira-url/internal/transport/httptransport"
@@ -17,16 +18,18 @@ import (
 )
 
 type URLHandler struct {
-	service *urlService
-	cache   *cache.Cache
-	log     *slog.Logger
+	service      *urlService
+	cache        *cache.Cache
+	clickService *click.ClickService
+	log          *slog.Logger
 }
 
-func newURLHandler(service *urlService, cache *cache.Cache, log *slog.Logger) *URLHandler {
+func newURLHandler(service *urlService, cache *cache.Cache, clickService *click.ClickService, log *slog.Logger) *URLHandler {
 	return &URLHandler{
-		cache:   cache,
-		service: service,
-		log:     log,
+		cache:        cache,
+		service:      service,
+		clickService: clickService,
+		log:          log,
 	}
 }
 
@@ -129,6 +132,7 @@ func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Req
 			return
 		}
 
+		handler.clickService.IncrementClicks(code)
 		json := httptransport.JSONResponse[URLResponse]{
 			Data:    url,
 			Type:    httptransport.Success,
@@ -144,16 +148,22 @@ func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Req
 	}
 
 	handler.log.Debug("Cache", "FOUND", code)
+
+	handler.clickService.IncrementClicks(code)
+
 	urlReponse := URLResponse{
 		OriginalURL: string(foundURL),
 	}
+
 	json := httptransport.JSONResponse[URLResponse]{
 		Data:    &urlReponse,
 		Type:    httptransport.Success,
 		Message: "Url found successfully",
 	}
 
-	if err := response.JSON[httptransport.JSONResponse[URLResponse]](w, http.StatusSeeOther, json); err != nil {
+	headers := make(http.Header, 0)
+	headers["Location"] = []string{urlReponse.OriginalURL}
+	if err := response.JSONWithHeader[httptransport.JSONResponse[URLResponse]](w, http.StatusFound, json, headers); err != nil {
 		handler.log.Error("Error sending the response", "error", err.Error())
 		httperrors.ServerError(w, r, err)
 		return
