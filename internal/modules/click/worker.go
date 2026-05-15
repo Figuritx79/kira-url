@@ -21,8 +21,7 @@ func NewClickWorker(service *ClickService, db *gorm.DB, logger *slog.Logger) *Cl
 	}
 }
 func (cw *ClickWorker) Start() {
-	// ticker := time.NewTicker(4 * time.Minute)
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(4 * time.Minute)
 	defer ticker.Stop()
 	cw.logger.Info("====Schedule start=====")
 	cw.logger.Info("====Visit Count update=====")

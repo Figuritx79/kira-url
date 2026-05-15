@@ -1,10 +1,7 @@
 package server
 
 import (
-	"fmt"
 	"log/slog"
-	"net/http"
-	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 
@@ -18,16 +15,16 @@ import (
 var autoMigrate = env.GetEnvBool("AUTO_MIGRATE", true)
 
 type Server struct {
-	port         int
+	Port         int
 	logger       *slog.Logger
 	db           database.Service
 	urlModule    *url.URLModule
 	cache        *cache.Cache
-	clickWorker  *click.ClickWorker
+	ClickWorker  *click.ClickWorker
 	clickService *click.ClickService
 }
 
-func NewServer(logger *slog.Logger) *http.Server {
+func NewServer(logger *slog.Logger) *Server {
 	// Define db
 	db := database.New(autoMigrate)
 	// Define fast access layer cache
@@ -40,24 +37,14 @@ func NewServer(logger *slog.Logger) *http.Server {
 	urlModule := url.NewURLModule(urlRepository, cache, clickService, logger)
 	port := env.GetEnvInt("PORT", 8080)
 	NewServer := &Server{
-		port:      port,
-		logger:    logger,
-		db:        db,
-		urlModule: urlModule,
-		cache:     cache,
+		Port:         port,
+		logger:       logger,
+		db:           db,
+		urlModule:    urlModule,
+		cache:        cache,
+		ClickWorker:  clickWorker,
+		clickService: clickService,
 	}
 
-	// Declare Server config
-	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", NewServer.port),
-		Handler:      NewServer.RegisterRoutes(),
-		ErrorLog:     slog.NewLogLogger(NewServer.logger.Handler(), slog.LevelWarn),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
-	}
-
-	logger.Info("starting server", slog.Group("server", "addr", server.Addr))
-	go clickWorker.Start()
-	return server
+	return NewServer
 }

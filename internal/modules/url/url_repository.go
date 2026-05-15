@@ -2,8 +2,6 @@ package url
 
 import (
 	"kira-url/internal/database/models"
-
-	"github.com/google/uuid"
 )
 
 type URLRepository interface {

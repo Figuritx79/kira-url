@@ -45,13 +45,24 @@ func main() {
 	logger := slog.New(tint.NewHandler(os.Stdout, &tint.Options{Level: slog.LevelDebug}))
 	server := server.NewServer(logger)
 
+	httpServer := &http.Server{
+		Addr:         fmt.Sprintf(":%d", server.Port),
+		Handler:      server.RegisterRoutes(),
+		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelWarn),
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
+	logger.Info("starting server", slog.Group("server", "addr", httpServer.Addr))
+
+	go server.ClickWorker.Start()
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
 
 	// Run graceful shutdown in a separate goroutine
-	go gracefulShutdown(server, done)
+	go gracefulShutdown(httpServer, done)
 
-	err := server.ListenAndServe()
+	err := httpServer.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		panic(fmt.Sprintf("http server error: %s", err))
 	}

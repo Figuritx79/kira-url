@@ -8,7 +8,6 @@ import (
 	"kira-url/internal/constants"
 	"kira-url/internal/database/models"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -70,17 +69,4 @@ func (service *urlService) Save(url *CreatURL) (*URLCompleteResponse, error) {
 		ShortURL:    constants.BaseDomain + newURL.ShortURL,
 		OriginalURL: newURL.OriginalURL,
 	}, nil
-}
-
-func (service *urlService) Update(id uuid.UUID, visitCount int64) error {
-	url := models.URL{
-		VisitCount: visitCount + 1,
-		ID:         id,
-	}
-
-	err := service.repository.Update(url, id)
-	if err != nil {
-		return err
-	}
-	return nil
 }

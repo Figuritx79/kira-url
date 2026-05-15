@@ -139,7 +139,9 @@ func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Req
 			Message: "Url found successfully",
 		}
 		handler.cache.Set(code, []byte(url.OriginalURL), constants.BASE_TTL)
-		if err := response.JSON[httptransport.JSONResponse[URLResponse]](w, http.StatusSeeOther, json); err != nil {
+		headers := make(http.Header)
+		headers["Location"] = []string{url.OriginalURL}
+		if err := response.JSONWithHeader[httptransport.JSONResponse[URLResponse]](w, http.StatusFound, json, headers); err != nil {
 			handler.log.Error("Error sending the response", "error", err.Error())
 			httperrors.ServerError(w, r, err)
 			return
