@@ -43,19 +43,14 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 
 func main() {
 	logger := slog.New(tint.NewHandler(os.Stdout, &tint.Options{Level: slog.LevelDebug}))
-	server := server.NewServer(logger)
 
-	httpServer := &http.Server{
-		Addr:         fmt.Sprintf(":%d", server.Port),
-		Handler:      server.RegisterRoutes(),
-		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelWarn),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
-	}
+	localServer := server.NewServer(logger)
+
+	httpServer := server.NewHttpServer(localServer, logger)
+
 	logger.Info("starting server", slog.Group("server", "addr", httpServer.Addr))
 
-	go server.ClickWorker.Start()
+	localServer.InitializeProcess()
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
 

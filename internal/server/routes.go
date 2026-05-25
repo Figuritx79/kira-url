@@ -26,9 +26,6 @@ func (s *Server) RegisterRoutes() http.Handler {
 		MaxAge:           300,
 	}))
 
-	r.Get("/", s.HelloWorldHandler)
-
-	r.Get("/health", s.healthHandler)
 
 	r.Mount("/api", s.urlModule.RegisterRoutes())
 

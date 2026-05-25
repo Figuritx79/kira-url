@@ -1,7 +1,10 @@
 package server
 
 import (
+	"fmt"
 	"log/slog"
+	"net/http"
+	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 
@@ -20,7 +23,7 @@ type Server struct {
 	db           database.Service
 	urlModule    *url.URLModule
 	cache        *cache.Cache
-	ClickWorker  *click.ClickWorker
+	clickWorker  *click.ClickWorker
 	clickService *click.ClickService
 }
 
@@ -42,9 +45,25 @@ func NewServer(logger *slog.Logger) *Server {
 		db:           db,
 		urlModule:    urlModule,
 		cache:        cache,
-		ClickWorker:  clickWorker,
+		clickWorker:  clickWorker,
 		clickService: clickService,
 	}
 
 	return NewServer
+}
+func (s *Server) InitializeProcess() {
+	// In this function we can start diferent process, like cron/schedule,etc
+	go s.clickWorker.Start()
+}
+
+func NewHttpServer(server *Server, logger *slog.Logger) *http.Server {
+	httpServer := &http.Server{
+		Addr:         fmt.Sprintf(":%d", server.Port),
+		Handler:      server.RegisterRoutes(),
+		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelWarn),
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
+	return httpServer
 }
