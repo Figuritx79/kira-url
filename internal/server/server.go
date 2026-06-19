@@ -51,6 +51,7 @@ func NewServer(logger *slog.Logger) *Server {
 
 	return NewServer
 }
+
 func (s *Server) InitializeProcess() {
 	// In this function we can start diferent process, like cron/schedule,etc
 	go s.clickWorker.Start(s.urlModule.URLHandler.Service.BatchUpdate)

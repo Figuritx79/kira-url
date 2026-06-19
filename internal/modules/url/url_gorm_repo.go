@@ -99,8 +99,8 @@ func (repository *urlGormRepository) Update(updateURL models.URL, code string) e
 	}
 	return nil
 }
-func (repository *urlGormRepository) Updates(urls []models.URL) error {
 
+func (repository *urlGormRepository) Updates(urls []models.URL) error {
 	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
 	defer cancel()
 
@@ -108,16 +108,14 @@ func (repository *urlGormRepository) Updates(urls []models.URL) error {
 		WithContext(ctx).
 		Transaction(func(tx *gorm.DB) error {
 			for _, url := range urls {
-				if err := tx.Model(&models.URL{}).Where("short_url= ?", url.ShortURL).Update("visit_count", url.VisitCount).Error; err != nil {
+				if err := tx.Model(&models.URL{}).Where("short_url= ?", url.ShortURL).UpdateColumn("visit_count", gorm.Expr("visit_count + ?", url.VisitCount)).Error; err != nil {
 					return err
 				}
 			}
 			return nil
 		})
-
 	if err != nil {
 		return err
 	}
 	return nil
-
 }
