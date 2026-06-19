@@ -18,7 +18,7 @@ import (
 )
 
 type URLHandler struct {
-	service      *urlService
+	Service      *urlService
 	cache        *cache.Cache
 	clickService *click.ClickService
 	log          *slog.Logger
@@ -27,7 +27,7 @@ type URLHandler struct {
 func newURLHandler(service *urlService, cache *cache.Cache, clickService *click.ClickService, log *slog.Logger) *URLHandler {
 	return &URLHandler{
 		cache:        cache,
-		service:      service,
+		Service:      service,
 		clickService: clickService,
 		log:          log,
 	}
@@ -53,7 +53,7 @@ func (handler *URLHandler) SaveURLShorter(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	shortURLResponse, found, err := handler.service.FindByURL(createUrl.OriginalURL)
+	shortURLResponse, found, err := handler.Service.FindByURL(createUrl.OriginalURL)
 	if err != nil {
 		handler.log.Error("Error searching the URL", "error", err.Error())
 		httperrors.ServerError(w, r, err)
@@ -77,7 +77,7 @@ func (handler *URLHandler) SaveURLShorter(w http.ResponseWriter, r *http.Request
 		}
 		return
 	}
-	shortURL, err := handler.service.Save(&createUrl)
+	shortURL, err := handler.Service.Save(&createUrl)
 	if err != nil {
 		handler.log.Error("Error saving the URL", "error", err.Error())
 		httperrors.ServerError(w, r, err)
@@ -115,7 +115,7 @@ func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Req
 	foundURL, err := handler.cache.Get(code)
 	if err != nil {
 		handler.log.Debug("Cache", "DON'T FOUND", code)
-		url, err := handler.service.FindByShortURL(code)
+		url, err := handler.Service.FindByShortURL(code)
 		if err != nil {
 			if errors.Is(err, ErrURLNotFound) {
 				handler.log.Warn("Find short code", "NOT_FOUND", err.Error())

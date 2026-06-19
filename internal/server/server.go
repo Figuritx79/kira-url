@@ -53,7 +53,7 @@ func NewServer(logger *slog.Logger) *Server {
 }
 func (s *Server) InitializeProcess() {
 	// In this function we can start diferent process, like cron/schedule,etc
-	go s.clickWorker.Start()
+	go s.clickWorker.Start(s.urlModule.URLHandler.Service.BatchUpdate)
 }
 
 func NewHttpServer(server *Server, logger *slog.Logger) *http.Server {

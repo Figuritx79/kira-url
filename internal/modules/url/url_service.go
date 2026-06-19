@@ -70,3 +70,7 @@ func (service *urlService) Save(url *CreatURL) (*URLCompleteResponse, error) {
 		OriginalURL: newURL.OriginalURL,
 	}, nil
 }
+
+func (service *urlService) BatchUpdate(updateURLs []models.URL) error {
+	return service.repository.Updates(updateURLs)
+}
