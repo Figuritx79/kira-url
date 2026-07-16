@@ -42,7 +42,7 @@ func (repository *urlGormRepository) FindByShortURL(code string) (*URLResponse, 
 	return url, nil
 }
 
-func (repository *urlGormRepository) Save(url models.URL) error {
+func (repository *urlGormRepository) Save(url *models.URL) error {
 	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
 	defer cancel()
 	err := repository.db.WithContext(ctx).

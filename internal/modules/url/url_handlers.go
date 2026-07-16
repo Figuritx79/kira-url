@@ -38,7 +38,7 @@ func (handler *URLHandler) SaveURLShorter(w http.ResponseWriter, r *http.Request
 
 	if err := request.GetRequestBody[CreatURL](r, &createUrl); err != nil {
 		handler.log.Error("Error getting the body", "error", err.Error())
-		httperrors.ServerError(w, r, err)
+		httperrors.ServerError(w, r)
 		return
 	}
 
@@ -56,8 +56,9 @@ func (handler *URLHandler) SaveURLShorter(w http.ResponseWriter, r *http.Request
 	shortURLResponse, found, err := handler.Service.FindByURL(createUrl.OriginalURL)
 	if err != nil {
 		handler.log.Error("Error searching the URL", "error", err.Error())
-		httperrors.ServerError(w, r, err)
+		httperrors.ServerError(w, r)
 	}
+
 	if found {
 		shortURLResponse.CompleteShortURL = constants.BaseDomain + shortURLResponse.ShortURL
 		_, err := handler.cache.Get(shortURLResponse.ShortURL)
@@ -72,15 +73,31 @@ func (handler *URLHandler) SaveURLShorter(w http.ResponseWriter, r *http.Request
 
 		if err := response.JSON[httptransport.JSONResponse[ShortURLResponse]](w, http.StatusOK, json); err != nil {
 			handler.log.Error("Error sending the response", "error", err.Error())
-			httperrors.ServerError(w, r, err)
+			httperrors.ServerError(w, r)
 			return
 		}
 		return
 	}
 	shortURL, err := handler.Service.Save(&createUrl)
 	if err != nil {
+		if errors.Is(err, ErrInvalidCustomCode) {
+			handler.log.Error("Error saving the URL", "error", err.Error())
+			httperrors.BadRequest(w, r, err)
+			return
+		}
+		if errors.Is(err, ErrMinRunesCustomCode) {
+			handler.log.Error("Error saving the URL", "error", err.Error())
+			httperrors.BadRequest(w, r, err)
+			return
+		}
+		if errors.Is(err, ErrMaxRunesCustomCode) {
+			handler.log.Error("Error saving the URL", "error", err.Error())
+			httperrors.BadRequest(w, r, err)
+			return
+		}
+
 		handler.log.Error("Error saving the URL", "error", err.Error())
-		httperrors.ServerError(w, r, err)
+		httperrors.ServerError(w, r)
 		return
 	}
 
@@ -92,7 +109,7 @@ func (handler *URLHandler) SaveURLShorter(w http.ResponseWriter, r *http.Request
 
 	if err := response.JSON[httptransport.JSONResponse[URLCompleteResponse]](w, http.StatusOK, json); err != nil {
 		handler.log.Error("Error sending the response", "error", err.Error())
-		httperrors.ServerError(w, r, err)
+		httperrors.ServerError(w, r)
 		return
 	}
 }
@@ -123,7 +140,7 @@ func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Req
 				return
 			}
 			handler.log.Error("Error finding the URL", "error", err.Error())
-			httperrors.ServerError(w, r, err)
+			httperrors.ServerError(w, r)
 			return
 		}
 
@@ -143,7 +160,7 @@ func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Req
 		headers["Location"] = []string{url.OriginalURL}
 		if err := response.JSONWithHeader[httptransport.JSONResponse[URLResponse]](w, http.StatusFound, json, headers); err != nil {
 			handler.log.Error("Error sending the response", "error", err.Error())
-			httperrors.ServerError(w, r, err)
+			httperrors.ServerError(w, r)
 			return
 		}
 		return
@@ -167,7 +184,7 @@ func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Req
 	headers["Location"] = []string{urlReponse.OriginalURL}
 	if err := response.JSONWithHeader[httptransport.JSONResponse[URLResponse]](w, http.StatusFound, json, headers); err != nil {
 		handler.log.Error("Error sending the response", "error", err.Error())
-		httperrors.ServerError(w, r, err)
+		httperrors.ServerError(w, r)
 		return
 	}
 }
