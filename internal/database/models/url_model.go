@@ -12,7 +12,7 @@ import (
 
 type URL struct {
 	ID          uuid.UUID      `gorm:"primaryKey; type:uuid;"`
-	ShortURL    string         `gorm:"unique; not null; index; type:varchar(10)"`
+	ShortURL    string         `gorm:"unique; not null; index; type:varchar(40)"`
 	OriginalURL string         `gorm:"not null; type:text" `
 	VisitCount  int64          `gorm:"default:0"`
 	IsCustom    bool           `gorm:"type:boolean; default:false; not null;"`
