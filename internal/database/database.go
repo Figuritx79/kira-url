@@ -42,12 +42,15 @@ type service struct {
 }
 
 var (
-	database   = env.GetEnvString("DB_DATABASE", "example")
-	password   = env.GetEnvString("DB_PASSWORD", "your_password")
-	username   = env.GetEnvString("DB_USERNAME", "your_username")
-	port       = env.GetEnvString("DB_PORT", "3536")
-	host       = env.GetEnvString("DB_HOST", "localhost")
-	schema     = env.GetEnvString("DB_SCHEMA", "public ")
+	database       = env.GetEnvString("DB_DATABASE", "example")
+	password       = env.GetEnvString("DB_PASSWORD", "your_password")
+	username       = env.GetEnvString("DB_USERNAME", "your_username")
+	port           = env.GetEnvString("DB_PORT", "3536")
+	host           = env.GetEnvString("DB_HOST", "localhost")
+	schema         = env.GetEnvString("DB_SCHEMA", "public")
+	sslmode        = env.GetEnvString("SSL_MODE", "require")
+	channel_biding = env.GetEnvString("CHANNEL_BINDING", "require")
+
 	dbInstance *service
 )
 
@@ -56,7 +59,7 @@ func New(autoMigrate bool) Service {
 	if dbInstance != nil {
 		return dbInstance
 	}
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require&search_path=%s&channel_binding=require", username, password, host, port, database, schema)
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s&search_path=%s&channel_binding=%s", username, password, host, port, database, sslmode, schema, channel_biding)
 	db, err := sql.Open("pgx", connStr)
 	if err != nil {
 		log.Fatal(err)
