@@ -22,8 +22,8 @@ func errorMessage(w http.ResponseWriter, r *http.Request, status int, message st
 	}
 }
 
-func ServerError(w http.ResponseWriter, r *http.Request, err error) {
-	errorMessage(w, r, http.StatusInternalServerError, err.Error(), nil)
+func ServerError(w http.ResponseWriter, r *http.Request) {
+	errorMessage(w, r, http.StatusInternalServerError, "internal server error", nil)
 }
 
 func MethodNotAllowed(w http.ResponseWriter, r *http.Request) {
