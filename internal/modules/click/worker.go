@@ -1,10 +1,11 @@
 package click
 
 import (
-	"kira-url/internal/database/models"
-	"kira-url/internal/funcs"
 	"log/slog"
 	"time"
+
+	"kira-url/internal/database/models"
+	"kira-url/internal/funcs"
 
 	"gorm.io/gorm"
 )
@@ -22,6 +23,7 @@ func NewClickWorker(service *ClickService, db *gorm.DB, logger *slog.Logger) *Cl
 		logger:       logger,
 	}
 }
+
 func (cw *ClickWorker) Start(task func([]models.URL) error) {
 	ticker := time.NewTicker(4 * time.Minute)
 	defer ticker.Stop()
@@ -35,5 +37,7 @@ func (cw *ClickWorker) Start(task func([]models.URL) error) {
 		if err := task(batch); err != nil {
 			cw.logger.Error("Task error:", "ERROR", err)
 		}
+
 	}
+	cw.logger.Info("====Schedule end=====")
 }
