@@ -12,16 +12,16 @@ import (
 	"gorm.io/gorm"
 )
 
-type urlService struct {
+type URLService struct {
 	repository URLRepository
 	log        *slog.Logger
 }
 
-func newURLService(repository URLRepository, log *slog.Logger) *urlService {
-	return &urlService{repository: repository, log: log}
+func newURLService(repository URLRepository, log *slog.Logger) *URLService {
+	return &URLService{repository: repository, log: log}
 }
 
-func (service *urlService) FindByShortURL(code string) (*URLResponse, error) {
+func (service *URLService) FindByShortURL(code string) (*URLResponse, error) {
 	shortURL, err := service.repository.FindByShortURL(code)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -40,7 +40,7 @@ func (service *urlService) FindByShortURL(code string) (*URLResponse, error) {
 	return shortURL, nil
 }
 
-func (service *urlService) FindByURL(url string) (*ShortURLResponse, bool, error) {
+func (service *URLService) FindByURL(url string) (*ShortURLResponse, bool, error) {
 	found, err := service.repository.FindByURL(url)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -51,14 +51,14 @@ func (service *urlService) FindByURL(url string) (*ShortURLResponse, bool, error
 	return found, true, nil
 }
 
-func (service *urlService) Save(url *CreatURL) (*URLCompleteResponse, error) {
+func (service *URLService) Save(url *CreatURL) (*URLCompleteResponse, error) {
 	if validator.NotEmpty(url.CustomCode) {
 		return service.saveWithCustomCode(url)
 	}
 	return service.saveBase62Code(url)
 }
 
-func (service *urlService) saveWithCustomCode(url *CreatURL) (*URLCompleteResponse, error) {
+func (service *URLService) saveWithCustomCode(url *CreatURL) (*URLCompleteResponse, error) {
 	if !validator.MinRunes(url.CustomCode, 3) {
 		return nil, ErrMinRunesCustomCode
 	}
@@ -86,7 +86,7 @@ func (service *urlService) saveWithCustomCode(url *CreatURL) (*URLCompleteRespon
 	}, nil
 }
 
-func (service *urlService) saveBase62Code(url *CreatURL) (*URLCompleteResponse, error) {
+func (service *URLService) saveBase62Code(url *CreatURL) (*URLCompleteResponse, error) {
 	randNumber := base62.RandamBase62Number()
 
 	code := base62.EncodeToBase62(randNumber)
@@ -107,6 +107,6 @@ func (service *urlService) saveBase62Code(url *CreatURL) (*URLCompleteResponse, 
 	}, nil
 }
 
-func (service *urlService) BatchUpdate(updateURLs []models.URL) error {
+func (service *URLService) BatchUpdate(updateURLs []models.URL) error {
 	return service.repository.Updates(updateURLs)
 }

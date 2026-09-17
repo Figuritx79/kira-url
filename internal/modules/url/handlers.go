@@ -18,13 +18,13 @@ import (
 )
 
 type URLHandler struct {
-	Service      *urlService
+	Service      *URLService
 	cache        *cache.Cache
 	clickService *click.ClickService
 	log          *slog.Logger
 }
 
-func newURLHandler(service *urlService, cache *cache.Cache, clickService *click.ClickService, log *slog.Logger) *URLHandler {
+func newURLHandler(service *URLService, cache *cache.Cache, clickService *click.ClickService, log *slog.Logger) *URLHandler {
 	return &URLHandler{
 		cache:        cache,
 		Service:      service,
