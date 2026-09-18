@@ -1,11 +1,13 @@
 package app
 
 import (
+	"log/slog"
+
 	"kira-url/internal/cache"
 	"kira-url/internal/database"
 	"kira-url/internal/modules/click"
 	"kira-url/internal/modules/url"
-	"log/slog"
+	repository "kira-url/internal/repository/url"
 )
 
 type repositories struct {
@@ -21,12 +23,13 @@ type modules struct {
 }
 
 func buildRepositories(db database.Service) *repositories {
-	urlRepository := url.NewURLGormRepository(db.GetDB())
+	urlRepository := repository.NewURLRepository(db.GetDB())
 
 	return &repositories{
 		URL: urlRepository,
 	}
 }
+
 func buildServices() *services {
 	clickService := click.NewClickService()
 	// urlService := url.New
@@ -34,8 +37,8 @@ func buildServices() *services {
 		Click: clickService,
 	}
 }
-func buildModules(db database.Service, log *slog.Logger, repos repositories, ser services, cache *cache.Cache) *modules {
 
+func buildModules(db database.Service, log *slog.Logger, repos repositories, ser services, cache *cache.Cache) *modules {
 	// Define click module
 	clickWorker := click.NewClickWorker(ser.Click, db.GetDB(), log)
 	// Define url module
