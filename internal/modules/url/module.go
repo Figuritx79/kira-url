@@ -21,13 +21,7 @@ func NewURLModule(urlRepository URLRepository, cache *cache.Cache, clickService 
 	}
 }
 
-func (module *URLModule) RegisterRoutes() *chi.Mux {
-	router := chi.NewRouter()
-
-	router.Route("/urls", func(r chi.Router) {
-		r.Get("/{code}", module.URLHandler.FindURLByShortCode)
-		r.Post("/", module.URLHandler.SaveURLShorter)
-	})
-
-	return router
+func (module *URLModule) RegisterRoutes(r chi.Router) {
+	r.Get("/{code}", module.URLHandler.FindURLByShortCode)
+	r.Post("/", module.URLHandler.SaveURLShorter)
 }

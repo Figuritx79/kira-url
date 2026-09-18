@@ -5,26 +5,26 @@ import (
 
 	"kira-url/internal/database"
 	"kira-url/internal/database/models"
+	"kira-url/internal/modules/url"
+	urlresponse "kira-url/internal/modules/url"
 
 	"gorm.io/gorm"
 )
 
-var _ URLRepository = (*urlGormRepository)(nil)
-
-type urlGormRepository struct {
+type URLRepository struct {
 	db *gorm.DB
 }
 
-func NewURLGormRepository(db *gorm.DB) *urlGormRepository {
-	return &urlGormRepository{db: db}
+func NewURLRepository(db *gorm.DB) *URLRepository {
+	return &URLRepository{db: db}
 }
 
-func (repository *urlGormRepository) FindByShortURL(code string) (*URLResponse, error) {
+func (repository *URLRepository) FindByShortURL(code string) (*urlresponse.URLResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
 
 	defer cancel()
 
-	var url *URLResponse
+	var url *url.URLResponse
 
 	err := repository.db.WithContext(ctx).
 		Model(&models.URL{}).
@@ -42,7 +42,7 @@ func (repository *urlGormRepository) FindByShortURL(code string) (*URLResponse, 
 	return url, nil
 }
 
-func (repository *urlGormRepository) Save(url *models.URL) error {
+func (repository *URLRepository) Save(url *models.URL) error {
 	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
 	defer cancel()
 	err := repository.db.WithContext(ctx).
@@ -59,12 +59,12 @@ func (repository *urlGormRepository) Save(url *models.URL) error {
 	return nil
 }
 
-func (repository *urlGormRepository) FindByURL(url string) (*ShortURLResponse, error) {
+func (repository *URLRepository) FindByURL(url string) (*urlresponse.ShortURLResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
 
 	defer cancel()
 
-	var shortURL *ShortURLResponse
+	var shortURL *urlresponse.ShortURLResponse
 
 	err := repository.db.WithContext(ctx).
 		Model(&models.URL{}).
@@ -82,7 +82,7 @@ func (repository *urlGormRepository) FindByURL(url string) (*ShortURLResponse, e
 	return shortURL, nil
 }
 
-func (repository *urlGormRepository) Update(updateURL models.URL, code string) error {
+func (repository *URLRepository) Update(updateURL models.URL, code string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
 	defer cancel()
 
@@ -100,7 +100,7 @@ func (repository *urlGormRepository) Update(updateURL models.URL, code string) e
 	return nil
 }
 
-func (repository *urlGormRepository) Updates(urls []models.URL) error {
+func (repository *URLRepository) Updates(urls []models.URL) error {
 	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
 	defer cancel()
 
