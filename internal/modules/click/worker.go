@@ -6,21 +6,19 @@ import (
 
 	"kira-url/internal/database/models"
 	"kira-url/internal/funcs"
-
-	"gorm.io/gorm"
 )
 
 type ClickWorker struct {
 	clickService *ClickService
-	db           *gorm.DB
 	logger       *slog.Logger
+	repository   clickRepository
 }
 
-func NewClickWorker(service *ClickService, db *gorm.DB, logger *slog.Logger) *ClickWorker {
+func NewClickWorker(service *ClickService, repository clickRepository, logger *slog.Logger) *ClickWorker {
 	return &ClickWorker{
 		clickService: service,
-		db:           db,
 		logger:       logger,
+		repository:   repository,
 	}
 }
 
