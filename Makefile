@@ -1,13 +1,16 @@
 # Simple Makefile for a Go project
 
 # Build the application
-all: build test
+# This one is not necessary in this moment(tests mising)
+# all: build test
+all: build
+
 
 build:
 	@echo "Building..."
 
 
-	@go build -o /tmp/kira-url/main cmd/api/main.go
+	@go build -ldflags="-s -w" -o /tmp/app/main cmd/api/main.go
 
 # Run the application
 run:
