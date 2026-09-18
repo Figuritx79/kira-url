@@ -1,38 +1,37 @@
-package server
+package app
 
 import (
 	"encoding/json"
 	"log"
 	"net/http"
 
-	"kira-url/internal/env"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
 
-var corsOrigins = env.GetEnvStringSlice("CORS_ORIGIN", []string{"http://localhost:3000"})
-
-func (s *Server) RegisterRoutes() http.Handler {
+func (a *App) RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   corsOrigins,
+		// AllowedOrigins:   s.config.Server.CorsDomains,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
 
-
-	r.Mount("/api", s.urlModule.RegisterRoutes())
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Get("/welcome", a.HelloWorldHandler)
+		r.Get("/health", a.healthHandler)
+		r.Route("/urls", a.Modules.URL.RegisterRoutes)
+	})
 
 	return r
 }
 
-func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
+func (s *App) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 	resp := make(map[string]string)
 	resp["message"] = "Welcome to kira-url"
 
@@ -44,7 +43,7 @@ func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonResp)
 }
 
-func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
+func (s *App) healthHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResp, _ := json.Marshal(s.db.Health())
 	_, _ = w.Write(jsonResp)
 }

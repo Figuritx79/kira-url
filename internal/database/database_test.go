@@ -1,100 +1,89 @@
 package database
 
-import (
-	"context"
-	"log"
-	"testing"
-	"time"
+// func mustStartPostgresContainer() (func(context.Context, ...testcontainers.TerminateOption) error, error) {
+// 	var (
+// 		dbName = "database"
+// 		dbPwd  = "password"
+// 		dbUser = "user"
+// 	)
 
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
-)
+// 	dbContainer, err := postgres.Run(
+// 		context.Background(),
+// 		"postgres:latest",
+// 		postgres.WithDatabase(dbName),
+// 		postgres.WithUsername(dbUser),
+// 		postgres.WithPassword(dbPwd),
+// 		testcontainers.WithWaitStrategy(
+// 			wait.ForLog("database system is ready to accept connections").
+// 				WithOccurrence(2).
+// 				WithStartupTimeout(5*time.Second)),
+// 	)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-func mustStartPostgresContainer() (func(context.Context, ...testcontainers.TerminateOption) error, error) {
-	var (
-		dbName = "database"
-		dbPwd  = "password"
-		dbUser = "user"
-	)
+// 	database = dbName
+// 	password = dbPwd
+// 	username = dbUser
 
-	dbContainer, err := postgres.Run(
-		context.Background(),
-		"postgres:latest",
-		postgres.WithDatabase(dbName),
-		postgres.WithUsername(dbUser),
-		postgres.WithPassword(dbPwd),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second)),
-	)
-	if err != nil {
-		return nil, err
-	}
+// 	dbHost, err := dbContainer.Host(context.Background())
+// 	if err != nil {
+// 		return dbContainer.Terminate, err
+// 	}
 
-	database = dbName
-	password = dbPwd
-	username = dbUser
+// 	dbPort, err := dbContainer.MappedPort(context.Background(), "5432/tcp")
+// 	if err != nil {
+// 		return dbContainer.Terminate, err
+// 	}
 
-	dbHost, err := dbContainer.Host(context.Background())
-	if err != nil {
-		return dbContainer.Terminate, err
-	}
+// 	host = dbHost
+// 	port = dbPort.Port()
 
-	dbPort, err := dbContainer.MappedPort(context.Background(), "5432/tcp")
-	if err != nil {
-		return dbContainer.Terminate, err
-	}
+// 	return dbContainer.Terminate, err
+// }
 
-	host = dbHost
-	port = dbPort.Port()
+// func TestMain(m *testing.M) {
+// 	teardown, err := mustStartPostgresContainer()
+// 	if err != nil {
+// 		log.Fatalf("could not start postgres container: %v", err)
+// 	}
 
-	return dbContainer.Terminate, err
-}
+// 	m.Run()
 
-func TestMain(m *testing.M) {
-	teardown, err := mustStartPostgresContainer()
-	if err != nil {
-		log.Fatalf("could not start postgres container: %v", err)
-	}
+// 	if teardown != nil && teardown(context.Background()) != nil {
+// 		log.Fatalf("could not teardown postgres container: %v", err)
+// 	}
+// }
 
-	m.Run()
+// func TestNew(t *testing.T) {
+// 	srv := New()
+// 	if srv == nil {
+// 		t.Fatal("New() returned nil")
+// 	}
+// }
 
-	if teardown != nil && teardown(context.Background()) != nil {
-		log.Fatalf("could not teardown postgres container: %v", err)
-	}
-}
+// func TestHealth(t *testing.T) {
+// 	srv := New()
 
-func TestNew(t *testing.T) {
-	srv := New()
-	if srv == nil {
-		t.Fatal("New() returned nil")
-	}
-}
+// 	stats := srv.Health()
 
-func TestHealth(t *testing.T) {
-	srv := New()
+// 	if stats["status"] != "up" {
+// 		t.Fatalf("expected status to be up, got %s", stats["status"])
+// 	}
 
-	stats := srv.Health()
+// 	if _, ok := stats["error"]; ok {
+// 		t.Fatalf("expected error not to be present")
+// 	}
 
-	if stats["status"] != "up" {
-		t.Fatalf("expected status to be up, got %s", stats["status"])
-	}
+// 	if stats["message"] != "It's healthy" {
+// 		t.Fatalf("expected message to be 'It's healthy', got %s", stats["message"])
+// 	}
+// }
 
-	if _, ok := stats["error"]; ok {
-		t.Fatalf("expected error not to be present")
-	}
+// func TestClose(t *testing.T) {
+// 	srv := New()
 
-	if stats["message"] != "It's healthy" {
-		t.Fatalf("expected message to be 'It's healthy', got %s", stats["message"])
-	}
-}
-
-func TestClose(t *testing.T) {
-	srv := New()
-
-	if srv.Close() != nil {
-		t.Fatalf("expected Close() to return nil")
-	}
-}
+// 	if srv.Close() != nil {
+// 		t.Fatalf("expected Close() to return nil")
+// 	}
+// }

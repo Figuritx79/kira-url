@@ -11,7 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"kira-url/internal/server"
+	"kira-url/internal/app"
+	"kira-url/internal/config"
 
 	"github.com/lmittmann/tint"
 )
@@ -41,12 +42,40 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	done <- true
 }
 
+func logLevel(cfg *config.Config) slog.Level {
+
+	var logLevel slog.Level
+	if cfg.Logger.LogLevel == "info" {
+		logLevel = slog.LevelInfo
+	}
+
+	if cfg.Logger.LogLevel == "debug" {
+		logLevel = slog.LevelDebug
+	}
+
+	if cfg.Logger.LogLevel == "warn" {
+		logLevel = slog.LevelWarn
+	}
+
+	if cfg.Logger.LogLevel == "error" {
+		logLevel = slog.LevelError
+	}
+	return logLevel
+}
+
 func main() {
-	logger := slog.New(tint.NewHandler(os.Stdout, &tint.Options{Level: slog.LevelDebug}))
+	cfg, err := config.New()
 
-	localServer := server.NewServer(logger)
+	if err != nil {
+		panic(fmt.Sprintf("http server error: %s", err))
+	}
 
-	httpServer := server.NewHttpServer(localServer, logger)
+	level := logLevel(cfg)
+	logger := slog.New(tint.NewHandler(os.Stdout, &tint.Options{Level: level}))
+
+	localServer := app.New(cfg, logger)
+
+	httpServer := newHttpServer(cfg, logger, localServer)
 
 	logger.Info("starting server", slog.Group("server", "addr", httpServer.Addr))
 
@@ -57,7 +86,7 @@ func main() {
 	// Run graceful shutdown in a separate goroutine
 	go gracefulShutdown(httpServer, done)
 
-	err := httpServer.ListenAndServe()
+	err = httpServer.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		panic(fmt.Sprintf("http server error: %s", err))
 	}
@@ -66,4 +95,16 @@ func main() {
 	// Wait for the graceful shutdown to complete
 	<-done
 	log.Println("Graceful shutdown complete.")
+}
+
+func newHttpServer(config *config.Config, logger *slog.Logger, app *app.App) *http.Server {
+	httpServer := &http.Server{
+		Addr:         fmt.Sprintf(":%d", config.Server.Port),
+		Handler:      app.RegisterRoutes(),
+		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelWarn),
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
+	return httpServer
 }
