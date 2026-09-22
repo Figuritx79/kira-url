@@ -7,6 +7,7 @@ import (
 	"kira-url/internal/base62"
 	"kira-url/internal/constants"
 	"kira-url/internal/database/models"
+	dtourl "kira-url/internal/dto/url"
 	"kira-url/internal/validator"
 
 	"gorm.io/gorm"
@@ -21,7 +22,7 @@ func newURLService(repository URLRepository, log *slog.Logger) *URLService {
 	return &URLService{repository: repository, log: log}
 }
 
-func (service *URLService) FindByShortURL(code string) (*URLResponse, error) {
+func (service *URLService) FindByShortURL(code string) (*dtourl.URLResponse, error) {
 	shortURL, err := service.repository.FindByShortURL(code)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -40,7 +41,7 @@ func (service *URLService) FindByShortURL(code string) (*URLResponse, error) {
 	return shortURL, nil
 }
 
-func (service *URLService) FindByURL(url string) (*ShortURLResponse, bool, error) {
+func (service *URLService) FindByURL(url string) (*dtourl.ShortURLResponse, bool, error) {
 	found, err := service.repository.FindByURL(url)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -51,14 +52,14 @@ func (service *URLService) FindByURL(url string) (*ShortURLResponse, bool, error
 	return found, true, nil
 }
 
-func (service *URLService) Save(url *CreatURL) (*URLCompleteResponse, error) {
+func (service *URLService) Save(url *dtourl.CreatURL) (*dtourl.URLCompleteResponse, error) {
 	if validator.NotEmpty(url.CustomCode) {
 		return service.saveWithCustomCode(url)
 	}
 	return service.saveBase62Code(url)
 }
 
-func (service *URLService) saveWithCustomCode(url *CreatURL) (*URLCompleteResponse, error) {
+func (service *URLService) saveWithCustomCode(url *dtourl.CreatURL) (*dtourl.URLCompleteResponse, error) {
 	if !validator.MinRunes(url.CustomCode, 3) {
 		return nil, ErrMinRunesCustomCode
 	}
@@ -80,13 +81,13 @@ func (service *URLService) saveWithCustomCode(url *CreatURL) (*URLCompleteRespon
 		return nil, err
 	}
 
-	return &URLCompleteResponse{
+	return &dtourl.URLCompleteResponse{
 		ShortURL:    constants.BaseDomain + newURL.ShortURL,
 		OriginalURL: newURL.OriginalURL,
 	}, nil
 }
 
-func (service *URLService) saveBase62Code(url *CreatURL) (*URLCompleteResponse, error) {
+func (service *URLService) saveBase62Code(url *dtourl.CreatURL) (*dtourl.URLCompleteResponse, error) {
 	randNumber := base62.RandamBase62Number()
 
 	code := base62.EncodeToBase62(randNumber)
@@ -101,7 +102,7 @@ func (service *URLService) saveBase62Code(url *CreatURL) (*URLCompleteResponse, 
 		return nil, err
 	}
 
-	return &URLCompleteResponse{
+	return &dtourl.URLCompleteResponse{
 		ShortURL:    constants.BaseDomain + newURL.ShortURL,
 		OriginalURL: newURL.OriginalURL,
 	}, nil

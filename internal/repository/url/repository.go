@@ -5,8 +5,7 @@ import (
 
 	"kira-url/internal/database"
 	"kira-url/internal/database/models"
-	"kira-url/internal/modules/url"
-	urlresponse "kira-url/internal/modules/url"
+	dtourl "kira-url/internal/dto/url"
 
 	"gorm.io/gorm"
 )
@@ -19,12 +18,12 @@ func NewURLRepository(db *gorm.DB) *URLRepository {
 	return &URLRepository{db: db}
 }
 
-func (repository *URLRepository) FindByShortURL(code string) (*urlresponse.URLResponse, error) {
+func (repository *URLRepository) FindByShortURL(code string) (*dtourl.URLResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
 
 	defer cancel()
 
-	var url *url.URLResponse
+	var url *dtourl.URLResponse
 
 	err := repository.db.WithContext(ctx).
 		Model(&models.URL{}).
@@ -59,12 +58,12 @@ func (repository *URLRepository) Save(url *models.URL) error {
 	return nil
 }
 
-func (repository *URLRepository) FindByURL(url string) (*urlresponse.ShortURLResponse, error) {
+func (repository *URLRepository) FindByURL(url string) (*dtourl.ShortURLResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
 
 	defer cancel()
 
-	var shortURL *urlresponse.ShortURLResponse
+	var shortURL *dtourl.ShortURLResponse
 
 	err := repository.db.WithContext(ctx).
 		Model(&models.URL{}).
