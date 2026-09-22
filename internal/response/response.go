@@ -1,13 +1,38 @@
-package httperrors
+package response
 
 import (
 	"fmt"
+	"kira-url/internal/transport/httptransport"
 	"net/http"
 	"strings"
-
-	"kira-url/internal/response"
-	"kira-url/internal/transport/httptransport"
 )
+
+func OK[T any](w http.ResponseWriter, data *T, message string) {
+	responseBody := httptransport.JSONResponse[T]{
+		Message: message,
+		Data:    data,
+		Type:    httptransport.Success,
+	}
+	err := JSON(w, http.StatusOK, responseBody)
+	if err != nil {
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func Found[T any](w http.ResponseWriter, data *T, message, originalURL string) {
+	headers := make(http.Header)
+	headers["Location"] = []string{originalURL}
+	body := httptransport.JSONResponse[T]{
+		Message: message,
+		Data:    data,
+		Type:    httptransport.Success,
+	}
+	err := JSONWithHeader(w, http.StatusFound, body, headers)
+	if err != nil {
+		w.WriteHeader(http.StatusFound)
+		w.Header().Set("Location", originalURL)
+	}
+}
 
 func errorMessage(w http.ResponseWriter, r *http.Request, status int, message string, header http.Header) {
 	message = strings.ToLower(message[:1] + message[1:])
@@ -16,7 +41,7 @@ func errorMessage(w http.ResponseWriter, r *http.Request, status int, message st
 		Type:    httptransport.Error,
 		Message: message,
 	}
-	err := response.JSONWithHeader[httptransport.JSONResponse[any]](w, status, body, header)
+	err := JSONWithHeader(w, status, body, header)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
