@@ -5,7 +5,6 @@ import (
 	"log/slog"
 
 	"kira-url/internal/base62"
-	"kira-url/internal/constants"
 	"kira-url/internal/database/models"
 	dtourl "kira-url/internal/dto/url"
 	"kira-url/internal/validator"
@@ -15,11 +14,12 @@ import (
 
 type URLService struct {
 	repository URLRepository
+	baseDomain string
 	log        *slog.Logger
 }
 
-func newURLService(repository URLRepository, log *slog.Logger) *URLService {
-	return &URLService{repository: repository, log: log}
+func newURLService(repository URLRepository, baseDomain string, log *slog.Logger) *URLService {
+	return &URLService{repository: repository, log: log, baseDomain: baseDomain}
 }
 
 func (service *URLService) FindByShortURL(code string) (*dtourl.URLResponse, error) {
@@ -82,7 +82,7 @@ func (service *URLService) saveWithCustomCode(url *dtourl.CreatURL) (*dtourl.URL
 	}
 
 	return &dtourl.URLCompleteResponse{
-		ShortURL:    constants.BaseDomain + newURL.ShortURL,
+		ShortURL:    service.baseDomain + newURL.ShortURL,
 		OriginalURL: newURL.OriginalURL,
 	}, nil
 }
@@ -103,7 +103,7 @@ func (service *URLService) saveBase62Code(url *dtourl.CreatURL) (*dtourl.URLComp
 	}
 
 	return &dtourl.URLCompleteResponse{
-		ShortURL:    constants.BaseDomain + newURL.ShortURL,
+		ShortURL:    service.baseDomain + newURL.ShortURL,
 		OriginalURL: newURL.OriginalURL,
 	}, nil
 }

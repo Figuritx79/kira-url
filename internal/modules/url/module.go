@@ -13,9 +13,9 @@ type URLModule struct {
 	URLHandler *URLHandler
 }
 
-func NewURLModule(urlRepository URLRepository, cache *cache.Cache, clickService *click.ClickService, log *slog.Logger) *URLModule {
-	service := newURLService(urlRepository, log)
-	handler := newURLHandler(service, cache, clickService, log)
+func NewURLModule(urlRepository URLRepository, cache *cache.Cache, clickService *click.ClickService, TTL int, baseDomain string, log *slog.Logger) *URLModule {
+	service := newURLService(urlRepository, baseDomain, log)
+	handler := newURLHandler(service, cache, clickService, TTL, baseDomain, log)
 	return &URLModule{
 		URLHandler: handler,
 	}

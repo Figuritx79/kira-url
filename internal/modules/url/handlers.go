@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"kira-url/internal/cache"
-	"kira-url/internal/constants"
 	"kira-url/internal/modules/click"
 	"kira-url/internal/request"
 	"kira-url/internal/response"
@@ -21,14 +20,18 @@ type URLHandler struct {
 	Service      *URLService
 	cache        *cache.Cache
 	clickService *click.ClickService
+	baseDomain   string
+	TTL          int
 	log          *slog.Logger
 }
 
-func newURLHandler(service *URLService, cache *cache.Cache, clickService *click.ClickService, log *slog.Logger) *URLHandler {
+func newURLHandler(service *URLService, cache *cache.Cache, clickService *click.ClickService, TTL int, baseDomain string, log *slog.Logger) *URLHandler {
 	return &URLHandler{
 		cache:        cache,
 		Service:      service,
 		clickService: clickService,
+		baseDomain:   baseDomain,
+		TTL:          TTL,
 		log:          log,
 	}
 }
@@ -37,7 +40,7 @@ func (handler *URLHandler) SaveURLShorter(w http.ResponseWriter, r *http.Request
 	var createUrl dtourl.CreatURL
 
 	if err := request.GetRequestBody(r, &createUrl); err != nil {
-		handler.log.Error("Error getting the body", "error", err.Error())
+		handler.log.Error("error getting the body", "error", err.Error())
 		response.ServerError(w, r)
 		return
 	}
@@ -60,10 +63,10 @@ func (handler *URLHandler) SaveURLShorter(w http.ResponseWriter, r *http.Request
 	}
 
 	if found {
-		shortURLResponse.CompleteShortURL = constants.BaseDomain + shortURLResponse.ShortURL
+		shortURLResponse.CompleteShortURL = handler.baseDomain + shortURLResponse.ShortURL
 		_, err := handler.cache.Get(shortURLResponse.ShortURL)
 		if err != nil {
-			handler.cache.Set(shortURLResponse.ShortURL, []byte(createUrl.OriginalURL), constants.BASE_TTL)
+			handler.cache.Set(shortURLResponse.ShortURL, []byte(createUrl.OriginalURL), handler.TTL)
 		}
 		response.OK(w, &shortURLResponse, "url found successfully")
 		return
@@ -98,15 +101,15 @@ func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Req
 	code := chi.URLParam(r, "code")
 
 	if !validator.NotEmpty(code) {
-		response.BadRequest(w, r, errors.New("The code can't be empty"))
+		response.BadRequest(w, r, errors.New("the code can't be empty"))
 		return
 	}
 	if !validator.MinRunes(code, 6) {
-		response.BadRequest(w, r, errors.New("The code must be at least 3 characters"))
+		response.BadRequest(w, r, errors.New("the code must be at least 3 characters"))
 		return
 	}
 	if !validator.MaxRunes(code, 6) {
-		response.BadRequest(w, r, errors.New("The code must be at most 10 characters"))
+		response.BadRequest(w, r, errors.New("the code must be at most 10 characters"))
 		return
 	}
 	foundURL, err := handler.cache.Get(code)
@@ -130,7 +133,7 @@ func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Req
 		}
 
 		handler.clickService.IncrementClicks(code)
-		handler.cache.Set(code, []byte(url.OriginalURL), constants.BASE_TTL)
+		handler.cache.Set(code, []byte(url.OriginalURL), handler.TTL)
 
 		response.Found(w, &url, "url found successfully", url.OriginalURL)
 		return

@@ -19,8 +19,6 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-const DEFAULT_TIMEOUT = 3 * time.Second
-
 // Service represents a service that interacts with a database.
 type Service interface {
 	// Health returns a map of health status information.
@@ -41,9 +39,7 @@ type service struct {
 	DB *gorm.DB
 }
 
-var (
-	dbInstance *service
-)
+var dbInstance *service
 
 func New(cfg *config.Config) Service {
 	// Reuse Connection

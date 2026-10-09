@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"kira-url/internal/constants"
 	"kira-url/internal/database/models"
 	dtourl "kira-url/internal/dto/url"
 
@@ -57,7 +56,7 @@ func (repository *fakeRepository) Updates(urls []models.URL) error {
 }
 
 func newTestService(repository URLRepository) *URLService {
-	return newURLService(repository, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	return newURLService(repository, "", slog.New(slog.NewTextHandler(io.Discard, nil)))
 }
 
 func TestFindByShortURL(t *testing.T) {
@@ -154,11 +153,11 @@ func TestFindByURL(t *testing.T) {
 			name: "returns the stored short url",
 			findByURLResponse: &dtourl.ShortURLResponse{
 				ShortURL:         "my-slug",
-				CompleteShortURL: constants.BaseDomain + "my-slug",
+				CompleteShortURL: "test..com/" + "my-slug",
 			},
 			want: &dtourl.ShortURLResponse{
 				ShortURL:         "my-slug",
-				CompleteShortURL: constants.BaseDomain + "my-slug",
+				CompleteShortURL: "test.com/" + "my-slug",
 			},
 			wantFound: true,
 			wantErr:   nil,
@@ -245,7 +244,7 @@ func TestSaveWithCustomCode(t *testing.T) {
 			originalURL: "https://example.com/page",
 			customCode:  "my-slug",
 			wantResponse: &dtourl.URLCompleteResponse{
-				ShortURL:    constants.BaseDomain + "my-slug",
+				ShortURL:    "test.com/" + "my-slug",
 				OriginalURL: "https://example.com/page",
 			},
 			wantStored:   1,
@@ -363,8 +362,8 @@ func TestSaveWithBase62Code(t *testing.T) {
 			if stored.IsCustom {
 				t.Fatalf("stored IsCustom = true, want false")
 			}
-			if got.ShortURL != constants.BaseDomain+stored.ShortURL {
-				t.Fatalf("Save() ShortURL = %q, want %q", got.ShortURL, constants.BaseDomain+stored.ShortURL)
+			if got.ShortURL != "test.com/"+stored.ShortURL {
+				t.Fatalf("Save() ShortURL = %q, want %q", got.ShortURL, "test.com/"+stored.ShortURL)
 			}
 			if got.OriginalURL != test.originalURL {
 				t.Fatalf("Save() OriginalURL = %q, want %q", got.OriginalURL, test.originalURL)

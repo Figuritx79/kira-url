@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	"kira-url/internal/cache"
+	"kira-url/internal/config"
 	"kira-url/internal/database"
 	"kira-url/internal/modules/click"
 	"kira-url/internal/modules/url"
@@ -38,11 +39,11 @@ func buildServices() *services {
 	}
 }
 
-func buildModules(db database.Service, log *slog.Logger, repos repositories, ser services, cache *cache.Cache) *modules {
+func buildModules(db database.Service, log *slog.Logger, repos repositories, ser services, cache *cache.Cache, cfg *config.Config) *modules {
 	// Define click module
 	clickWorker := click.NewClickWorker(ser.Click, db.GetDB(), log)
 	// Define url module
-	urlModule := url.NewURLModule(repos.URL, cache, ser.Click, log)
+	urlModule := url.NewURLModule(repos.URL, cache, ser.Click, cfg.Cache.TTL, cfg.Server.Domain, log)
 
 	return &modules{
 		URL:   *urlModule,

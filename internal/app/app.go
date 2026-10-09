@@ -27,7 +27,7 @@ func New(cfg *config.Config, logger *slog.Logger) *App {
 
 	repositories := buildRepositories(db)
 	services := buildServices()
-	modules := buildModules(db, logger, *repositories, *services, cache)
+	modules := buildModules(db, logger, *repositories, *services, cache, cfg)
 
 	NewServer := &App{
 		logger:       logger,

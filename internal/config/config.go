@@ -2,13 +2,16 @@ package config
 
 import (
 	"fmt"
+	"strings"
+
 	"kira-url/internal/env"
 )
 
 type Config struct {
-	Database DatabaseConfig
-	Server   ServerConfig
-	Logger   LoggerConfig
+	Database *DatabaseConfig
+	Server   *ServerConfig
+	Cache    *CacheConfig
+	Logger   *LoggerConfig
 }
 
 type DatabaseConfig struct {
@@ -30,19 +33,24 @@ type ServerConfig struct {
 	CorsDomains []string
 }
 
+type CacheConfig struct {
+	// Time to life
+	TTL int
+}
+
 type LoggerConfig struct {
 	LogLevel string
 }
 
 func New() (*Config, error) {
 	cfg := &Config{
-		Server: ServerConfig{
+		Server: &ServerConfig{
 			Port:        env.GetEnvInt("HTTP_PORT", 8080),
 			Env:         env.GetEnvString("SERVER_ENV", "DEV"),
 			Domain:      env.GetEnvString("SERVER_DOMAIN", ""),
 			CorsDomains: env.GetEnvStringSlice("CORS_ORIGIN", []string{}),
 		},
-		Database: DatabaseConfig{
+		Database: &DatabaseConfig{
 			Name:           env.GetEnvString("DB_DATABASE", "example"),
 			Password:       env.GetEnvString("DB_PASSWORD", "your_password"),
 			User:           env.GetEnvString("DB_USERNAME", "your_username"),
@@ -52,18 +60,33 @@ func New() (*Config, error) {
 			SSLMode:        env.GetEnvString("SSL_MODE", "require"),
 			ChannelBinding: env.GetEnvString("CHANNEL_BINDING", "require"),
 		},
-		Logger: LoggerConfig{
+		Logger: &LoggerConfig{
 			LogLevel: env.GetEnvString("LOG_LEVEL", "info"),
+		},
+		Cache: &CacheConfig{
+			TTL: env.GetEnvInt("BASE_TTL", 10),
 		},
 	}
 	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
+	cfg.ensureTrailingSlash()
 	return cfg, nil
 }
+
 func (c DatabaseConfig) DSN() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s", c.User, c.Password, c.Host, c.Port, c.Name, c.SSLMode)
 }
+
+// ensureTrailingSlash keeps short URL concatenation safe: BaseDomain is
+// prepended directly to the stored slug, so the separator must be present.
+func (c *Config) ensureTrailingSlash() {
+	if c.Server.Domain == "" || strings.HasSuffix(c.Server.Domain, "/") {
+		return
+	}
+	c.Server.Domain = c.Server.Domain + "/"
+}
+
 func (c *Config) validate() error {
 	if c.Server.Port == 0 {
 		return fmt.Errorf("HTTP_PORT is required")
