@@ -1,7 +1,6 @@
 package validator
 
 import (
-	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -23,7 +22,6 @@ func NotEmpty(value string) bool {
 }
 
 func MinRunes(value string, min int) bool {
-	fmt.Println("value", value, "min", min, "runes", utf8.RuneCountInString(value))
 	return utf8.RuneCountInString(value) >= min
 }
 
