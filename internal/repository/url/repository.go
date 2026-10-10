@@ -3,7 +3,6 @@ package url
 import (
 	"context"
 
-	"kira-url/internal/database"
 	"kira-url/internal/database/models"
 	dtourl "kira-url/internal/dto/url"
 
@@ -18,10 +17,7 @@ func NewURLRepository(db *gorm.DB) *URLRepository {
 	return &URLRepository{db: db}
 }
 
-func (repository *URLRepository) FindByShortURL(code string) (*dtourl.URLResponse, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
-
-	defer cancel()
+func (repository *URLRepository) FindByShortURL(ctx context.Context, code string) (*dtourl.URLResponse, error) {
 
 	var url *dtourl.URLResponse
 
@@ -41,9 +37,7 @@ func (repository *URLRepository) FindByShortURL(code string) (*dtourl.URLRespons
 	return url, nil
 }
 
-func (repository *URLRepository) Save(url *models.URL) error {
-	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
-	defer cancel()
+func (repository *URLRepository) Save(ctx context.Context, url *models.URL) error {
 	err := repository.db.WithContext(ctx).
 		Transaction(func(tx *gorm.DB) error {
 			url.BeforeCreate(tx)
@@ -58,10 +52,7 @@ func (repository *URLRepository) Save(url *models.URL) error {
 	return nil
 }
 
-func (repository *URLRepository) FindByURL(url string) (*dtourl.ShortURLResponse, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
-
-	defer cancel()
+func (repository *URLRepository) FindByURL(ctx context.Context, url string) (*dtourl.ShortURLResponse, error) {
 
 	var shortURL *dtourl.ShortURLResponse
 
@@ -81,10 +72,7 @@ func (repository *URLRepository) FindByURL(url string) (*dtourl.ShortURLResponse
 	return shortURL, nil
 }
 
-func (repository *URLRepository) Update(updateURL models.URL, code string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
-	defer cancel()
-
+func (repository *URLRepository) Update(ctx context.Context, updateURL models.URL, code string) error {
 	err := repository.db.
 		WithContext(ctx).
 		Transaction(func(tx *gorm.DB) error {
@@ -100,11 +88,8 @@ func (repository *URLRepository) Update(updateURL models.URL, code string) error
 }
 
 func (repository *URLRepository) Updates(urls []models.URL) error {
-	ctx, cancel := context.WithTimeout(context.Background(), database.DEFAULT_TIMEOUT)
-	defer cancel()
-
 	err := repository.db.
-		WithContext(ctx).
+		// WithContext(ctx).
 		Transaction(func(tx *gorm.DB) error {
 			for _, url := range urls {
 				if err := tx.Model(&models.URL{}).Where("short_url= ?", url.ShortURL).UpdateColumn("visit_count", gorm.Expr("visit_count + ?", url.VisitCount)).Error; err != nil {
@@ -117,4 +102,14 @@ func (repository *URLRepository) Updates(urls []models.URL) error {
 		return err
 	}
 	return nil
+}
+
+func (repository *URLRepository) update(ctx context.Context, data map[string]interface{}, shortURL string) error {
+	return repository.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Model(&models.URL{}).Where("short_url= ?", shortURL).Updates(data).Error
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }

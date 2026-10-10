@@ -56,7 +56,7 @@ func (handler *URLHandler) SaveURLShorter(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	shortURLResponse, found, err := handler.Service.FindByURL(createUrl.OriginalURL)
+	shortURLResponse, found, err := handler.Service.FindByURL(r.Context(), createUrl.OriginalURL)
 	if err != nil {
 		handler.log.Error("Error searching the URL", "error", err.Error())
 		response.ServerError(w, r)
@@ -71,7 +71,7 @@ func (handler *URLHandler) SaveURLShorter(w http.ResponseWriter, r *http.Request
 		response.OK(w, &shortURLResponse, "url found successfully")
 		return
 	}
-	shortURL, err := handler.Service.Save(&createUrl)
+	shortURL, err := handler.Service.Save(r.Context(), &createUrl)
 	if err != nil {
 		if errors.Is(err, ErrInvalidCustomCode) {
 			handler.log.Error("Error saving the URL", "error", err.Error())
@@ -115,7 +115,7 @@ func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Req
 	foundURL, err := handler.cache.Get(code)
 	if err != nil {
 		handler.log.Debug("Cache", "DON'T FOUND", code)
-		url, err := handler.Service.FindByShortURL(code)
+		url, err := handler.Service.FindByShortURL(r.Context(), code)
 		if err != nil {
 			if errors.Is(err, ErrURLNotFound) {
 				handler.log.Warn("Find short code", "NOT_FOUND", err.Error())

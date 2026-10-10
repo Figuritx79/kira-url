@@ -1,6 +1,7 @@
 package url
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 
@@ -22,8 +23,8 @@ func newURLService(repository URLRepository, baseDomain string, log *slog.Logger
 	return &URLService{repository: repository, log: log, baseDomain: baseDomain}
 }
 
-func (service *URLService) FindByShortURL(code string) (*dtourl.URLResponse, error) {
-	shortURL, err := service.repository.FindByShortURL(code)
+func (service *URLService) FindByShortURL(ctx context.Context, code string) (*dtourl.URLResponse, error) {
+	shortURL, err := service.repository.FindByShortURL(ctx, code)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			service.log.Warn("URL not found")
@@ -41,8 +42,8 @@ func (service *URLService) FindByShortURL(code string) (*dtourl.URLResponse, err
 	return shortURL, nil
 }
 
-func (service *URLService) FindByURL(url string) (*dtourl.ShortURLResponse, bool, error) {
-	found, err := service.repository.FindByURL(url)
+func (service *URLService) FindByURL(ctx context.Context, url string) (*dtourl.ShortURLResponse, bool, error) {
+	found, err := service.repository.FindByURL(ctx, url)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, false, nil
@@ -52,14 +53,14 @@ func (service *URLService) FindByURL(url string) (*dtourl.ShortURLResponse, bool
 	return found, true, nil
 }
 
-func (service *URLService) Save(url *dtourl.CreatURL) (*dtourl.URLCompleteResponse, error) {
+func (service *URLService) Save(ctx context.Context, url *dtourl.CreatURL) (*dtourl.URLCompleteResponse, error) {
 	if validator.NotEmpty(url.CustomCode) {
-		return service.saveWithCustomCode(url)
+		return service.saveWithCustomCode(ctx, url)
 	}
-	return service.saveBase62Code(url)
+	return service.saveBase62Code(ctx, url)
 }
 
-func (service *URLService) saveWithCustomCode(url *dtourl.CreatURL) (*dtourl.URLCompleteResponse, error) {
+func (service *URLService) saveWithCustomCode(ctx context.Context, url *dtourl.CreatURL) (*dtourl.URLCompleteResponse, error) {
 	if !validator.MinRunes(url.CustomCode, 3) {
 		return nil, ErrMinRunesCustomCode
 	}
@@ -76,7 +77,7 @@ func (service *URLService) saveWithCustomCode(url *dtourl.CreatURL) (*dtourl.URL
 		IsCustom:    true,
 	}
 
-	err := service.repository.Save(&newURL)
+	err := service.repository.Save(ctx, &newURL)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func (service *URLService) saveWithCustomCode(url *dtourl.CreatURL) (*dtourl.URL
 	}, nil
 }
 
-func (service *URLService) saveBase62Code(url *dtourl.CreatURL) (*dtourl.URLCompleteResponse, error) {
+func (service *URLService) saveBase62Code(ctx context.Context, url *dtourl.CreatURL) (*dtourl.URLCompleteResponse, error) {
 	randNumber := base62.RandamBase62Number()
 
 	code := base62.EncodeToBase62(randNumber)
@@ -97,7 +98,7 @@ func (service *URLService) saveBase62Code(url *dtourl.CreatURL) (*dtourl.URLComp
 		OriginalURL: url.OriginalURL,
 	}
 
-	err := service.repository.Save(&newURL)
+	err := service.repository.Save(ctx, &newURL)
 	if err != nil {
 		return nil, err
 	}

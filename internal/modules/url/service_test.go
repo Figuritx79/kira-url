@@ -1,6 +1,7 @@
 package url
 
 import (
+	"context"
 	"errors"
 	"io"
 	"log/slog"
@@ -31,15 +32,15 @@ type fakeRepository struct {
 	saveError error
 }
 
-func (repository *fakeRepository) FindByShortURL(code string) (*dtourl.URLResponse, error) {
+func (repository *fakeRepository) FindByShortURL(ctx context.Context, code string) (*dtourl.URLResponse, error) {
 	return repository.findByShortURLResponse, repository.findByShortURLError
 }
 
-func (repository *fakeRepository) FindByURL(url string) (*dtourl.ShortURLResponse, error) {
+func (repository *fakeRepository) FindByURL(ctx context.Context, url string) (*dtourl.ShortURLResponse, error) {
 	return repository.findByURLResponse, repository.findByURLError
 }
 
-func (repository *fakeRepository) Save(url *models.URL) error {
+func (repository *fakeRepository) Save(ctx context.Context, url *models.URL) error {
 	if repository.saveError != nil {
 		return repository.saveError
 	}
@@ -47,7 +48,7 @@ func (repository *fakeRepository) Save(url *models.URL) error {
 	return nil
 }
 
-func (repository *fakeRepository) Update(url models.URL, code string) error {
+func (repository *fakeRepository) Update(ctx context.Context, url models.URL, code string) error {
 	return nil
 }
 
@@ -56,7 +57,7 @@ func (repository *fakeRepository) Updates(urls []models.URL) error {
 }
 
 func newTestService(repository URLRepository) *URLService {
-	return newURLService(repository, "", slog.New(slog.NewTextHandler(io.Discard, nil)))
+	return newURLService(repository, "test.com/", slog.New(slog.NewTextHandler(io.Discard, nil)))
 }
 
 func TestFindByShortURL(t *testing.T) {
@@ -103,7 +104,7 @@ func TestFindByShortURL(t *testing.T) {
 			}
 			service := newTestService(repository)
 
-			got, err := service.FindByShortURL("any-code")
+			got, err := service.FindByShortURL(t.Context(), "any-code")
 
 			if !errors.Is(err, test.wantErr) {
 				t.Fatalf("FindByShortURL() error = %v, want %v", err, test.wantErr)
@@ -153,7 +154,7 @@ func TestFindByURL(t *testing.T) {
 			name: "returns the stored short url",
 			findByURLResponse: &dtourl.ShortURLResponse{
 				ShortURL:         "my-slug",
-				CompleteShortURL: "test..com/" + "my-slug",
+				CompleteShortURL: "test.com/" + "my-slug",
 			},
 			want: &dtourl.ShortURLResponse{
 				ShortURL:         "my-slug",
@@ -172,7 +173,7 @@ func TestFindByURL(t *testing.T) {
 			}
 			service := newTestService(repository)
 
-			got, found, err := service.FindByURL("https://example.com/page")
+			got, found, err := service.FindByURL(t.Context(), "https://example.com/page")
 
 			if !errors.Is(err, test.wantErr) {
 				t.Fatalf("FindByURL() error = %v, want %v", err, test.wantErr)
@@ -263,7 +264,7 @@ func TestSaveWithCustomCode(t *testing.T) {
 				CustomCode:  test.customCode,
 			}
 
-			got, err := service.Save(request)
+			got, err := service.Save(t.Context(), request)
 
 			if !errors.Is(err, test.wantErr) {
 				t.Fatalf("Save() error = %v, want %v", err, test.wantErr)
@@ -331,7 +332,7 @@ func TestSaveWithBase62Code(t *testing.T) {
 
 			request := &dtourl.CreatURL{OriginalURL: test.originalURL}
 
-			got, err := service.Save(request)
+			got, err := service.Save(t.Context(), request)
 
 			if !errors.Is(err, test.wantErr) {
 				t.Fatalf("Save() error = %v, want %v", err, test.wantErr)
