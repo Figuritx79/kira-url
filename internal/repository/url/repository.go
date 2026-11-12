@@ -18,7 +18,6 @@ func NewURLRepository(db *gorm.DB) *URLRepository {
 }
 
 func (repository *URLRepository) FindByShortURL(ctx context.Context, code string) (*dtourl.URLResponse, error) {
-
 	var url *dtourl.URLResponse
 
 	err := repository.db.WithContext(ctx).
@@ -53,7 +52,6 @@ func (repository *URLRepository) Save(ctx context.Context, url *models.URL) erro
 }
 
 func (repository *URLRepository) FindByURL(ctx context.Context, url string) (*dtourl.ShortURLResponse, error) {
-
 	var shortURL *dtourl.ShortURLResponse
 
 	err := repository.db.WithContext(ctx).
@@ -89,10 +87,12 @@ func (repository *URLRepository) Update(ctx context.Context, updateURL models.UR
 
 func (repository *URLRepository) Updates(urls []models.URL) error {
 	err := repository.db.
-		// WithContext(ctx).
 		Transaction(func(tx *gorm.DB) error {
 			for _, url := range urls {
-				if err := tx.Model(&models.URL{}).Where("short_url= ?", url.ShortURL).UpdateColumn("visit_count", gorm.Expr("visit_count + ?", url.VisitCount)).Error; err != nil {
+				if err := tx.Model(&models.URL{}).
+					Where("short_url= ?", url.ShortURL).
+					UpdateColumn("visit_count", gorm.Expr("visit_count + ?", url.VisitCount)).
+					Error; err != nil {
 					return err
 				}
 			}
