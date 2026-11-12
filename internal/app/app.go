@@ -26,8 +26,8 @@ func New(cfg *config.Config, logger *slog.Logger) *App {
 	cache := cache.NewCache(100 * 1024 * 1024)
 
 	repositories := buildRepositories(db)
-	services := buildServices()
-	modules := buildModules(db, logger, *repositories, *services, cache, cfg)
+	services := buildServices(logger, repositories, cfg)
+	modules := buildModules(db, logger, repositories, services, cache, cfg)
 
 	NewServer := &App{
 		logger:       logger,
@@ -42,5 +42,5 @@ func New(cfg *config.Config, logger *slog.Logger) *App {
 
 func (a *App) InitializeProcess() {
 	// In this function we can start diferent process, like cron/schedule,etc
-	go a.Modules.Click.Start(a.Modules.URL.URLHandler.Service.BatchUpdate)
+	go a.Modules.click.Start()
 }

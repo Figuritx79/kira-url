@@ -25,7 +25,7 @@ func (a *App) RegisterRoutes() http.Handler {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/welcome", a.HelloWorldHandler)
 		r.Get("/health", a.healthHandler)
-		r.Route("/urls", a.Modules.URL.RegisterRoutes)
+		r.Route("/urls", a.Modules.url.RegisterRoutes)
 	})
 
 	return r

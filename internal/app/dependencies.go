@@ -12,41 +12,43 @@ import (
 )
 
 type repositories struct {
-	URL url.URLRepository
+	url url.URLRepository
 }
 type services struct {
-	URL   *url.URLService
-	Click *click.ClickService
+	click *click.ClickService
+	url   *url.URLService
 }
 type modules struct {
-	URL   url.URLModule
-	Click click.ClickWorker
+	url   url.URLModule
+	click click.ClickWorker
 }
 
 func buildRepositories(db database.Service) *repositories {
 	urlRepository := repository.NewURLRepository(db.GetDB())
 
 	return &repositories{
-		URL: urlRepository,
+		url: urlRepository,
 	}
 }
 
-func buildServices() *services {
+func buildServices(log *slog.Logger, repos *repositories, cfg *config.Config) *services {
 	clickService := click.NewClickService()
-	// urlService := url.New
+	urlService := url.NewURLService(repos.url, cfg.Server.Domain, log)
 	return &services{
-		Click: clickService,
+		click: clickService,
+		url:   urlService,
 	}
 }
 
-func buildModules(db database.Service, log *slog.Logger, repos repositories, ser services, cache *cache.Cache, cfg *config.Config) *modules {
+func buildModules(db database.Service, log *slog.Logger, repos *repositories, ser *services, cache *cache.Cache, cfg *config.Config) *modules {
 	// Define click module
-	clickWorker := click.NewClickWorker(ser.Click, db.GetDB(), log)
 	// Define url module
-	urlModule := url.NewURLModule(repos.URL, cache, ser.Click, cfg.Cache.TTL, cfg.Server.Domain, log)
+	urlModule := url.NewURLModule(repos.url, cache, ser.click, ser.url, cfg.Cache.TTL, cfg.Server.Domain, log)
+
+	clickWorker := click.NewClickWorker(ser.click, ser.url, log)
 
 	return &modules{
-		URL:   *urlModule,
-		Click: *clickWorker,
+		url:   *urlModule,
+		click: *clickWorker,
 	}
 }
