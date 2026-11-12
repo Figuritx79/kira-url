@@ -77,9 +77,14 @@ func main() {
 
 	logger.Info("starting server", slog.Group("server", "addr", httpServer.Addr))
 
-	localServer.InitializeProcess()
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
+
+	// Context cancelled on SIGINT/SIGTERM, shared with background processes
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	localServer.InitializeProcess(ctx)
 
 	// Run graceful shutdown in a separate goroutine
 	go gracefulShutdown(httpServer, done)

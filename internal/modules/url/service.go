@@ -109,6 +109,6 @@ func (service *URLService) saveBase62Code(ctx context.Context, url *dtourl.Creat
 	}, nil
 }
 
-func (service *URLService) BatchUpdate(updateURLs []models.URL) error {
-	return service.repository.Updates(updateURLs)
+func (service *URLService) BatchUpdate(ctx context.Context, updateURLs []models.URL) error {
+	return service.repository.Updates(ctx, updateURLs)
 }

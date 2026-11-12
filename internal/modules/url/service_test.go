@@ -52,7 +52,7 @@ func (repository *fakeRepository) Update(ctx context.Context, url models.URL, co
 	return nil
 }
 
-func (repository *fakeRepository) Updates(urls []models.URL) error {
+func (repository *fakeRepository) Updates(ctx context.Context, urls []models.URL) error {
 	return nil
 }
 

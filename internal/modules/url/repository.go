@@ -11,5 +11,5 @@ type URLRepository interface {
 	Save(ctx context.Context, url *models.URL) error
 	FindByURL(ctx context.Context, url string) (*dtourl.ShortURLResponse, error)
 	Update(ctx context.Context, url models.URL, code string) error
-	Updates(urls []models.URL) error
+	Updates(ctx context.Context, urls []models.URL) error
 }

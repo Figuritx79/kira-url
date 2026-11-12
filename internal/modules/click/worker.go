@@ -1,6 +1,7 @@
 package click
 
 import (
+	"context"
 	"log/slog"
 	"time"
 	"uuid"
@@ -9,7 +10,7 @@ import (
 )
 
 type urlService interface {
-	BatchUpdate(updateURLs []models.URL) error
+	BatchUpdate(ctx context.Context, updateURLs []models.URL) error
 }
 type ClickWorker struct {
 	clickService *ClickService
@@ -25,20 +26,37 @@ func NewClickWorker(clickservice *ClickService, urlService urlService, logger *s
 	}
 }
 
-func (cw *ClickWorker) Start() {
+func (cw *ClickWorker) Start(ctx context.Context) {
 	ticker := time.NewTicker(4 * time.Minute)
 	defer ticker.Stop()
 	cw.logger.Info("====Schedule start=====")
 	cw.logger.Info("====Visit Count update=====")
-	for range ticker.C {
-		taksID := uuid.NewV7()
-		cw.logger.Info("Task ID:", "ID", taksID)
-		cw.logger.Info("Task executed at:", "TIME", time.Now())
-		batch := cw.clickService.FlushClicks()
-		if err := cw.urlService.BatchUpdate(batch); err != nil {
-			cw.logger.Error("Task error:", "ERROR", err)
-		}
 
+	for {
+		select {
+		case <-ctx.Done():
+			// ctx is already cancelled here, so use a fresh bounded context
+			// to persist the pending clicks during shutdown.
+			flushCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			cw.flush(flushCtx)
+			cancel()
+			cw.logger.Info("====Schedule end=====")
+			return
+		case <-ticker.C:
+			taskID := uuid.NewV7()
+			cw.logger.Info("Task ID:", "ID", taskID)
+			cw.logger.Info("Task executed at:", "TIME", time.Now())
+			cw.flush(ctx)
+		}
 	}
-	cw.logger.Info("====Schedule end=====")
+}
+
+func (cw *ClickWorker) flush(ctx context.Context) {
+	batch := cw.clickService.FlushClicks()
+	if len(batch) == 0 {
+		return
+	}
+	if err := cw.urlService.BatchUpdate(ctx, batch); err != nil {
+		cw.logger.Error("Task error:", "ERROR", err)
+	}
 }

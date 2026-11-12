@@ -19,8 +19,8 @@ type services struct {
 	url   *url.URLService
 }
 type modules struct {
-	url   url.URLModule
-	click click.ClickWorker
+	url   *url.URLModule
+	click *click.ClickWorker
 }
 
 func buildRepositories(db database.Service) *repositories {
@@ -40,15 +40,15 @@ func buildServices(log *slog.Logger, repos *repositories, cfg *config.Config) *s
 	}
 }
 
-func buildModules(db database.Service, log *slog.Logger, repos *repositories, ser *services, cache *cache.Cache, cfg *config.Config) *modules {
+func buildModules(log *slog.Logger, ser *services, cache *cache.Cache, cfg *config.Config) *modules {
 	// Define click module
 	// Define url module
-	urlModule := url.NewURLModule(repos.url, cache, ser.click, ser.url, cfg.Cache.TTL, cfg.Server.Domain, log)
+	urlModule := url.NewURLModule(cache, ser.click, ser.url, cfg.Cache.TTL, cfg.Server.Domain, log)
 
 	clickWorker := click.NewClickWorker(ser.click, ser.url, log)
 
 	return &modules{
-		url:   *urlModule,
-		click: *clickWorker,
+		url:   urlModule,
+		click: clickWorker,
 	}
 }

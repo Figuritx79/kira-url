@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -27,7 +28,7 @@ func New(cfg *config.Config, logger *slog.Logger) *App {
 
 	repositories := buildRepositories(db)
 	services := buildServices(logger, repositories, cfg)
-	modules := buildModules(db, logger, repositories, services, cache, cfg)
+	modules := buildModules(logger, services, cache, cfg)
 
 	NewServer := &App{
 		logger:       logger,
@@ -40,7 +41,7 @@ func New(cfg *config.Config, logger *slog.Logger) *App {
 	return NewServer
 }
 
-func (a *App) InitializeProcess() {
+func (a *App) InitializeProcess(ctx context.Context) {
 	// In this function we can start diferent process, like cron/schedule,etc
-	go a.Modules.click.Start()
+	go a.Modules.click.Start(ctx)
 }

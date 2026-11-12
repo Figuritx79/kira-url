@@ -85,8 +85,9 @@ func (repository *URLRepository) Update(ctx context.Context, updateURL models.UR
 	return nil
 }
 
-func (repository *URLRepository) Updates(urls []models.URL) error {
+func (repository *URLRepository) Updates(ctx context.Context, urls []models.URL) error {
 	err := repository.db.
+		WithContext(ctx).
 		Transaction(func(tx *gorm.DB) error {
 			for _, url := range urls {
 				if err := tx.Model(&models.URL{}).
