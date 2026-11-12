@@ -1,4 +1,4 @@
-FROM golang:1.27.4-alpine-1.27 AS build
+FROM golang:1.27.4-alpine AS build
 WORKDIR /tmp/app
 COPY . .
 RUN apk add --no-cache git make
