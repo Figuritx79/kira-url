@@ -66,10 +66,12 @@ func (handler *URLHandler) SaveURLShorter(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		handler.log.Error("Error searching the URL", "error", err.Error())
 		response.ServerError(w, r)
+		return
 	}
 
 	if found {
 		handler.foundURL(w, shortURLResponse, &createUrl)
+		return
 	}
 	shortURL, err := handler.Service.Save(r.Context(), &createUrl)
 	if err != nil {
@@ -103,7 +105,7 @@ func (handler *URLHandler) foundURL(w http.ResponseWriter, shortURLResponse *dto
 	if err != nil {
 		handler.cache.Set(shortURLResponse.ShortURL, []byte(createURL.OriginalURL), handler.TTL)
 	}
-	response.OK(w, &shortURLResponse, "url found successfully")
+	response.OK(w, shortURLResponse, "url found successfully")
 	return
 }
 
@@ -125,6 +127,7 @@ func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Req
 	foundURL, err := handler.cache.Get(code)
 	if err != nil {
 		handler.cacheNotFound(r, w, code)
+		return
 	}
 
 	handler.log.Debug("Cache", "FOUND", code)
@@ -160,6 +163,6 @@ func (handler *URLHandler) cacheNotFound(r *http.Request, w http.ResponseWriter,
 	handler.clickService.IncrementClicks(code)
 	handler.cache.Set(code, []byte(url.OriginalURL), handler.TTL)
 
-	response.Found(w, &url, "url found successfully", url.OriginalURL)
+	response.Found(w, url, "url found successfully", url.OriginalURL)
 	return
 }
