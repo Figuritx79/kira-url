@@ -1,6 +1,6 @@
 package url
 
-import "github.com/google/uuid"
+import "uuid"
 
 // This struct is used when the user wants the original url by code
 type URLResponse struct {

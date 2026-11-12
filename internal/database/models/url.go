@@ -3,10 +3,8 @@ package models
 import (
 	"strings"
 	"time"
+	"uuid"
 
-	"kira-url/internal/funcs"
-
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -22,12 +20,8 @@ type URL struct {
 }
 
 func (url *URL) BeforeCreate(tx *gorm.DB) error {
-	if url.ID == uuid.Nil {
-		newUUID, err := funcs.GenerateUUID()
-		if err != nil {
-			return err
-		}
-		url.ID = newUUID
+	if url.ID == uuid.Nil() {
+		url.ID = uuid.NewV7()
 	}
 	if url.IsCustom {
 		url.ShortURL = strings.ToLower(url.ShortURL)
