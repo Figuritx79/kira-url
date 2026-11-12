@@ -3,36 +3,39 @@ package click
 import (
 	"log/slog"
 	"time"
+	"uuid"
 
 	"kira-url/internal/database/models"
-	"kira-url/internal/funcs"
 )
 
+type urlService interface {
+	BatchUpdate(updateURLs []models.URL) error
+}
 type ClickWorker struct {
 	clickService *ClickService
 	logger       *slog.Logger
-	repository   clickRepository
+	urlService   urlService
 }
 
-func NewClickWorker(service *ClickService, repository clickRepository, logger *slog.Logger) *ClickWorker {
+func NewClickWorker(clickservice *ClickService, urlService urlService, logger *slog.Logger) *ClickWorker {
 	return &ClickWorker{
-		clickService: service,
+		clickService: clickservice,
 		logger:       logger,
-		repository:   repository,
+		urlService:   urlService,
 	}
 }
 
-func (cw *ClickWorker) Start(task func([]models.URL) error) {
+func (cw *ClickWorker) Start() {
 	ticker := time.NewTicker(4 * time.Minute)
 	defer ticker.Stop()
 	cw.logger.Info("====Schedule start=====")
 	cw.logger.Info("====Visit Count update=====")
 	for range ticker.C {
-		taksID, _ := funcs.GenerateUUID()
+		taksID := uuid.NewV7()
 		cw.logger.Info("Task ID:", "ID", taksID)
 		cw.logger.Info("Task executed at:", "TIME", time.Now())
 		batch := cw.clickService.FlushClicks()
-		if err := task(batch); err != nil {
+		if err := cw.urlService.BatchUpdate(batch); err != nil {
 			cw.logger.Error("Task error:", "ERROR", err)
 		}
 
