@@ -43,7 +43,6 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 }
 
 func logLevel(cfg *config.Config) slog.Level {
-
 	var logLevel slog.Level
 	if cfg.Logger.LogLevel == "info" {
 		logLevel = slog.LevelInfo
@@ -65,13 +64,12 @@ func logLevel(cfg *config.Config) slog.Level {
 
 func main() {
 	cfg, err := config.New()
-
 	if err != nil {
 		panic(fmt.Sprintf("http server error: %s", err))
 	}
 
 	level := logLevel(cfg)
-	logger := slog.New(tint.NewHandler(os.Stdout, &tint.Options{Level: level}))
+	logger := slog.New(tint.NewTextHandler(os.Stdout, &tint.Options{Level: level}))
 
 	localServer := app.New(cfg, logger)
 
