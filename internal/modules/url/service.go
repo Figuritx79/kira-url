@@ -19,7 +19,7 @@ type URLService struct {
 	log        *slog.Logger
 }
 
-func newURLService(repository URLRepository, baseDomain string, log *slog.Logger) *URLService {
+func NewURLService(repository URLRepository, baseDomain string, log *slog.Logger) *URLService {
 	return &URLService{repository: repository, log: log, baseDomain: baseDomain}
 }
 

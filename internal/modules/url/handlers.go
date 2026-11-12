@@ -5,8 +5,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"kira-url/internal/cache"
-	"kira-url/internal/modules/click"
 	"kira-url/internal/request"
 	"kira-url/internal/response"
 	"kira-url/internal/validator"
@@ -16,16 +14,24 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+type clickService interface {
+	IncrementClicks(code string)
+}
+type cacheService interface {
+	Get(key string) ([]byte, error)
+	Set(key string, value []byte, baseTTL int)
+}
+
 type URLHandler struct {
 	Service      *URLService
-	cache        *cache.Cache
-	clickService *click.ClickService
+	cache        cacheService
+	clickService clickService
 	baseDomain   string
 	TTL          int
 	log          *slog.Logger
 }
 
-func newURLHandler(service *URLService, cache *cache.Cache, clickService *click.ClickService, TTL int, baseDomain string, log *slog.Logger) *URLHandler {
+func newURLHandler(service *URLService, cache cacheService, clickService clickService, TTL int, baseDomain string, log *slog.Logger) *URLHandler {
 	return &URLHandler{
 		cache:        cache,
 		Service:      service,
@@ -63,13 +69,7 @@ func (handler *URLHandler) SaveURLShorter(w http.ResponseWriter, r *http.Request
 	}
 
 	if found {
-		shortURLResponse.CompleteShortURL = handler.baseDomain + shortURLResponse.ShortURL
-		_, err := handler.cache.Get(shortURLResponse.ShortURL)
-		if err != nil {
-			handler.cache.Set(shortURLResponse.ShortURL, []byte(createUrl.OriginalURL), handler.TTL)
-		}
-		response.OK(w, &shortURLResponse, "url found successfully")
-		return
+		handler.foundURL(w, shortURLResponse, &createUrl)
 	}
 	shortURL, err := handler.Service.Save(r.Context(), &createUrl)
 	if err != nil {
@@ -97,6 +97,16 @@ func (handler *URLHandler) SaveURLShorter(w http.ResponseWriter, r *http.Request
 	response.OK(w, &shortURL, "url created successfully")
 }
 
+func (handler *URLHandler) foundURL(w http.ResponseWriter, shortURLResponse *dtourl.ShortURLResponse, createURL *dtourl.CreatURL) {
+	shortURLResponse.CompleteShortURL = handler.baseDomain + shortURLResponse.ShortURL
+	_, err := handler.cache.Get(shortURLResponse.ShortURL)
+	if err != nil {
+		handler.cache.Set(shortURLResponse.ShortURL, []byte(createURL.OriginalURL), handler.TTL)
+	}
+	response.OK(w, &shortURLResponse, "url found successfully")
+	return
+}
+
 func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Request) {
 	code := chi.URLParam(r, "code")
 
@@ -114,29 +124,7 @@ func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Req
 	}
 	foundURL, err := handler.cache.Get(code)
 	if err != nil {
-		handler.log.Debug("Cache", "DON'T FOUND", code)
-		url, err := handler.Service.FindByShortURL(r.Context(), code)
-		if err != nil {
-			if errors.Is(err, ErrURLNotFound) {
-				handler.log.Warn("Find short code", "NOT_FOUND", err.Error())
-				response.NotFound(w, r)
-				return
-			}
-			handler.log.Error("Error finding the URL", "error", err.Error())
-			response.ServerError(w, r)
-			return
-		}
-
-		if url == nil {
-			response.NotFound(w, r)
-			return
-		}
-
-		handler.clickService.IncrementClicks(code)
-		handler.cache.Set(code, []byte(url.OriginalURL), handler.TTL)
-
-		response.Found(w, &url, "url found successfully", url.OriginalURL)
-		return
+		handler.cacheNotFound(r, w, code)
 	}
 
 	handler.log.Debug("Cache", "FOUND", code)
@@ -148,4 +136,30 @@ func (handler *URLHandler) FindURLByShortCode(w http.ResponseWriter, r *http.Req
 	}
 
 	response.Found(w, &urlReponse, "url found successfully", urlReponse.OriginalURL)
+}
+
+func (handler *URLHandler) cacheNotFound(r *http.Request, w http.ResponseWriter, code string) {
+	handler.log.Debug("Cache", "DON'T FOUND", code)
+	url, err := handler.Service.FindByShortURL(r.Context(), code)
+	if err != nil {
+		if errors.Is(err, ErrURLNotFound) {
+			handler.log.Warn("Find short code", "NOT_FOUND", err.Error())
+			response.NotFound(w, r)
+			return
+		}
+		handler.log.Error("Error finding the URL", "error", err.Error())
+		response.ServerError(w, r)
+		return
+	}
+
+	if url == nil {
+		response.NotFound(w, r)
+		return
+	}
+
+	handler.clickService.IncrementClicks(code)
+	handler.cache.Set(code, []byte(url.OriginalURL), handler.TTL)
+
+	response.Found(w, &url, "url found successfully", url.OriginalURL)
+	return
 }

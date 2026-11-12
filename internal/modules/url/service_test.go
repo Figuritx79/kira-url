@@ -7,11 +7,11 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
+	"uuid"
 
 	"kira-url/internal/database/models"
 	dtourl "kira-url/internal/dto/url"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -57,7 +57,7 @@ func (repository *fakeRepository) Updates(urls []models.URL) error {
 }
 
 func newTestService(repository URLRepository) *URLService {
-	return newURLService(repository, "test.com/", slog.New(slog.NewTextHandler(io.Discard, nil)))
+	return NewURLService(repository, "test.com/", slog.New(slog.NewTextHandler(io.Discard, nil)))
 }
 
 func TestFindByShortURL(t *testing.T) {
