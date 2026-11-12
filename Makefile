@@ -32,7 +32,6 @@ clean:
 # Live Reload
 watch:
 	@if command -v air > /dev/null; then \
-    		go run ./cmd/api/main.go; \
             air; \
             echo "Watching...";\
         else \
