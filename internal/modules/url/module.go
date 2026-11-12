@@ -10,7 +10,7 @@ type URLModule struct {
 	URLHandler *URLHandler
 }
 
-func NewURLModule(urlRepository URLRepository, cache cacheService, clickService clickService, urlService *URLService, TTL int, baseDomain string, log *slog.Logger) *URLModule {
+func NewURLModule(cache cacheService, clickService clickService, urlService *URLService, TTL int, baseDomain string, log *slog.Logger) *URLModule {
 	handler := newURLHandler(urlService, cache, clickService, TTL, baseDomain, log)
 	return &URLModule{
 		URLHandler: handler,
